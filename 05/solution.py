@@ -29,20 +29,17 @@ class Stacks:
 
     def execute_parsed_command(self, command: str, count: int, from_stack: Optional[int], to_stack: Optional[int]):
         if command == 'move':
-            if self.move_type == Move_type.SINGLE:
-                for _ in range(count):
-                    self.move_crate(from_stack, to_stack)
-            if self.move_type == Move_type.MULTIPLE:
-                self.move_crates(count, from_stack, to_stack)
+            self.move_crates(count, from_stack, to_stack)
             return
         raise ValueError(f"Command '{command}' not supported")
 
-    def move_crate(self, from_stack: int, to_stack: int) -> None:
-        self.stacks[to_stack-1].append(self.stacks[from_stack-1].pop())
-
-    def move_crates(self, count, from_stack: int, to_stack: int) -> None:
-        self.stacks[to_stack-1].extend(self.stacks[from_stack-1][-count:])
-        self.stacks[from_stack-1] = self.stacks[from_stack-1][:-count]
+    def move_crates(self, count: int, from_stack: int, to_stack: int) -> None:
+        if self.move_type == Move_type.SINGLE:
+            self.stacks[to_stack-1].extend(self.stacks[from_stack-1][:-(count+1):-1])
+            self.stacks[from_stack-1] = self.stacks[from_stack-1][:-count]
+        if self.move_type == Move_type.MULTIPLE:
+            self.stacks[to_stack-1].extend(self.stacks[from_stack-1][-count:])
+            self.stacks[from_stack-1] = self.stacks[from_stack-1][:-count]
 
     def top_crates(self) -> List[str]:
         return [ x[-1] for x in self.stacks if len(x) > 0 ]
@@ -51,11 +48,10 @@ def line_iter(file_object: TextIOWrapper):
     for line in file_object:
         yield line.rstrip()
 
-def parse_row(line: str) -> List[Optional[str]]:
+def parse_row(line: str) -> List[str]:
     if line.strip()[0] != '[':
         return []
-    count = (len(line) // 4) + 1
-    return [ line[(x*4)+1] for x in range(count) ]
+    return line[1::4]
 
 def parse_command(line: str) -> dict:
     [command, count, _, from_stack, _, to_stack] = line.split(' ')
