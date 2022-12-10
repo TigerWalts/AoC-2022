@@ -8,10 +8,10 @@ INPUT = path.join(FOLDER, 'input.txt')
 Vector = Tuple[int, int]
 
 directions: Dict[str, Vector] = {
-    'U': (1, 0),
-    'D': (-1, 0),
-    'L': (0, -1),
-    'R': (0, 1)
+    'U': (0, 1),
+    'D': (0, -1),
+    'L': (-1, 0),
+    'R': (1, 0)
 }
 
 def line_iter(file_object: TextIOWrapper):
@@ -19,20 +19,19 @@ def line_iter(file_object: TextIOWrapper):
         yield line.strip()
 
 def add_vectors(iter: Iterable[Vector])-> Vector:
-    x = y = 0
-    for vec in iter:
-        x, y = x + vec[0], y + vec[1]
-    return (x, y)
+    return tuple(map(sum, zip(*iter)))
 
 def distances(vec1: Vector, vec2: Vector) -> Vector:
-    x = vec1[0] - vec2[0]
-    y = vec1[1] - vec2[1]
-    return (x, y)
+    return tuple(map(lambda x : x[0] - x[1], zip(vec1, vec2)))
 
 def normalize(vec: Vector) -> Vector:
     return tuple(map(lambda x : 0 if x == 0 else (1 if x > 0 else -1), vec))
 
-def main(snake):
+def main(size: int):
+    if size < 2:
+        raise ValueError('size must be 2 or greater')
+    start: Vector = (0,0)
+    snake = [ start for _ in range(size) ]
     visited: Set[Vector] = {snake[-1]}
     with open(INPUT, 'r') as input_file:
         for line in line_iter(input_file):
@@ -50,5 +49,5 @@ def main(snake):
     print(len(visited))
 
 if __name__ == '__main__':
-    main([ (0,0) for _ in range(2) ])
-    main([ (0,0) for _ in range(10) ])
+    main(2)
+    main(10)
