@@ -21,7 +21,7 @@ def line_iter(file_object: TextIOWrapper):
 def add_vectors(iter: Iterable[Vector])-> Vector:
     return tuple(map(sum, zip(*iter)))
 
-def distances(vec1: Vector, vec2: Vector) -> Vector:
+def difference(vec1: Vector, vec2: Vector) -> Vector:
     return tuple(map(lambda x : x[0] - x[1], zip(vec1, vec2)))
 
 def normalize(vec: Vector) -> Vector:
@@ -41,9 +41,9 @@ def main(size: int):
                 snake[0] = add_vectors([snake[0], directions[dir]])
                 for h in range(len(snake) - 1):
                     t = h + 1
-                    offset = distances(snake[h], snake[t])
+                    offset = difference(snake[h], snake[t])
                     if max(map(abs, offset)) < 2:
-                        continue
+                        break
                     snake[t] = add_vectors([snake[t], normalize(offset)])
                 visited.add(snake[-1])
     print(len(visited))
