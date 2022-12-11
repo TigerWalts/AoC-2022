@@ -98,7 +98,7 @@ def main(rounds: int, reduction: int):
     divtest_product = product( monkey['divtest'] for _, monkey in monkeys.items() )
     for _ in range(rounds):
         monkeys = process_monkeys(monkeys, divtest_product, reduction)
-    top_2 = sorted([monkey['inspections'] for _, monkey in monkeys.items()],reverse=True)[:2]
+    top_2 = sorted(( monkey['inspections'] for _, monkey in monkeys.items() ),reverse=True)[:2]
     print(product(top_2))
 
 if __name__ == '__main__':
