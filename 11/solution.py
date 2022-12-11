@@ -50,8 +50,13 @@ def parse_monkey(iter_lines: Iterable):
             monkey['if_false'] = args[-1]
     if len(monkey) == 0:
         raise StopIteration
-    monkey['inspections'] = 0
-    return id, monkey
+    return id, {
+        'items': monkey['items'],
+        'divtest': monkey['divtest'],
+        'operation': operation_factory(monkey['operator'], monkey['operands']),
+        'get_target': get_target_factory(monkey['divtest'], monkey['if_true'], monkey['if_false']),
+        'inspections': 0
+    }
 
 def product(iter: Iterable[int]) -> int:
     value = 1
@@ -59,7 +64,7 @@ def product(iter: Iterable[int]) -> int:
         value *= x
     return value
 
-def operation_factory(operator: str, operands: Tuple, reduction: int = 1):
+def operation_factory(operator: str, operands: Tuple):
     OPERATIONS = {
         '*': lambda l, r : l * r,
         '/': lambda l, r : l / r,
@@ -67,23 +72,21 @@ def operation_factory(operator: str, operands: Tuple, reduction: int = 1):
         '-': lambda l, r : l - r
     }
     def operation(old: int):
-        return OPERATIONS[operator](*map(lambda a : old if a == 'old' else int(a), operands)) // reduction
+        return OPERATIONS[operator](*map(lambda a : old if a == 'old' else int(a), operands))
     return operation
 
-def div_test(item, divisor):
-    return item % divisor == 0
+def get_target_factory(divisor: int, if_true: str, if_false: str):
+    def get_target(value: int):
+        return if_true if value % divisor == 0 else if_false
+    return get_target
 
 def process_monkeys(monkeys: dict, divtest_product: int, reduction: int = 1):
     for _, monkey in monkeys.items():
-        items_remaindered_iter = ( item % divtest_product for item in monkey['items'] )
-        items_operated_iter = map(operation_factory(monkey['operator'], monkey['operands'], reduction), items_remaindered_iter)
-        items_tested_iter = ( (item, div_test(item, monkey['divtest'])) for item in items_operated_iter )
-        for item, is_true in items_tested_iter:
+        items_operated_iter = ( monkey['operation'](item % divtest_product) // reduction for item in monkey['items'] )
+        items_targets_iter = ( (item, monkey['get_target'](item)) for item in items_operated_iter )
+        for item, target in items_targets_iter:
+            monkeys[target]['items'].append(item)
             monkey['inspections'] += 1
-            if is_true:
-                monkeys[monkey['if_true']]['items'].append(item)
-            if not is_true:
-                monkeys[monkey['if_false']]['items'].append(item)
         monkey['items'] = []
     return monkeys
 
