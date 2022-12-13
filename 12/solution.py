@@ -1,3 +1,4 @@
+from copy import deepcopy
 from enum import Enum, auto
 from io import TextIOWrapper
 from os import makedirs, path
@@ -76,7 +77,7 @@ def iter_maze(maze):
         for x, cell in enumerate(row):
             yield (x, y), cell
 
-def main():
+def build_maze():
     makedirs(DATAFOLDER, exist_ok=True)
     start = None
     end = None
@@ -130,52 +131,24 @@ def main():
                 dirs = dirs[1:]
             directions = add_vectors((dirs[1], tuple(map(lambda x : Dir.U.value if x else 0, can_move(chars[1], chars[0])))))
             work2_file.write(''.join(map(dir_to_chr,directions)))
-
     with open(WORK2, 'r') as work2_file:
         maze = [ list( map(lambda x : [tuple(map(chr_to_dir,x)), -1], iter_column_pairs(work2_file, y*2))) for y in range(max_y + 1) ]
-    with open(DEBUG,'w') as debug_file:
-        for row in maze:
-            cells_iter = (str(cell) for cell in row )
-            debug_file.write(' '.join(cells_iter) + '\n')
+    return maze, start, end, all_as
+
+def main(maze, start, break_on, direction = 0):
     increment_cell(start, maze)
-    while True:
-        if get_cell(end, maze)[1] > -1:
-            break
+    while not break_on(maze):
         for loc, cell in iter_maze(maze):
             if cell[1] > -1:
                 increment_cell(loc, maze)
         for loc, cell in iter_maze(maze):
             if cell[1] == 1:
-                for uloc in iter_unvisited_neighbour_locs(loc, maze):
+                for uloc in iter_unvisited_neighbour_locs(loc, maze, direction):
                     increment_cell(uloc, maze)
-        if sum(1 for _, cell in iter_maze(maze) if cell[1] == 0) == 0:
-            break
-    with open(DEBUG,'w') as debug_file:
-        for row in maze:
-            cells_iter = (f"{cell[1]:4}" for cell in row )
-            debug_file.write(''.join(cells_iter) + '\n')
     print(get_cell(start, maze)[1])
 
-    with open(WORK2, 'r') as work2_file:
-        maze = [ list( map(lambda x : [tuple(map(chr_to_dir,x)), -1], iter_column_pairs(work2_file, y*2))) for y in range(max_y + 1) ]
-    increment_cell(end, maze)
-    while True:
-        if sum(1 for loc in all_as if get_cell(loc, maze)[1] > -1) > 0:
-            break
-        for loc, cell in iter_maze(maze):
-            if cell[1] > -1:
-                increment_cell(loc, maze)
-        for loc, cell in iter_maze(maze):
-            if cell[1] == 1:
-                for uloc in iter_unvisited_neighbour_locs(loc, maze, 1):
-                    increment_cell(uloc, maze)
-        if sum(1 for _, cell in iter_maze(maze) if cell[1] == 0) == 0:
-            break
-    # with open(DEBUG,'w') as debug_file:
-    #     for row in maze:
-    #         cells_iter = (f"{cell[1]:4}" for cell in row )
-    #         debug_file.write(''.join(cells_iter) + '\n')
-    print(get_cell(end, maze)[1])
-
 if __name__ == '__main__':
-    main()
+    maze1, start, end, all_as = build_maze()
+    maze2 = deepcopy(maze1)
+    main(maze1, start, lambda m : get_cell(end, m)[1] > -1)
+    main(maze2, end, lambda m : sum(1 for loc in all_as if get_cell(loc, m)[1] > -1) > 0, 1)
