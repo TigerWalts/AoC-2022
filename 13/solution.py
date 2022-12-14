@@ -31,10 +31,12 @@ def iter_prepend(iter: Iterable, pre: Iterable):
         yield value
 
 def compare(left, right):
+    if left == right:
+        return 0
     if all(isinstance(x, int) for x in (left, right)):
-        return 0 if left == right else right - left
+        return right - left
     left, right = tuple([x] if isinstance(x, int) else x for x in (left, right))
-    for result in map(lambda x : compare(*x),zip(left, right)):
+    for result in map(lambda x : compare(*x), zip(left, right)):
         if result == 0:
             continue
         return result
