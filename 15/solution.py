@@ -38,36 +38,46 @@ def get_x_ranges_at_y(sensors_beacons_mdists, search_y):
     }
 
 def reduce_ranges(ranges: Set[Tuple[int, int]]):
-    ranges_reduced = set()
-    range1 = None
-    for range2 in sorted(ranges, key=lambda x : x[0]):
-        if range1 is None:
-            range1 = range2
-        if range1 == range2:
-            pass
-        elif range1[1] + 1 == range2[0]:
-            range1 = (range1[0], range2[1])
-        elif range2[1] + 1 == range1[0]:
-            range2 = (range2[0], range1[1])
-        elif range1[1] < range2[0] or range2[1] < range1[0]:
-            ranges_reduced.add(range1)
-            range1 = range2
-        else:
-            range1 = (min(range1[0], range2[0]), max(range1[1], range2[1]))
-    ranges_reduced.add(range1)
+    start_count = len(ranges)
+    if start_count <= 1:
+        return ranges
+    while True:
+        ranges_reduced = set()
+        range1 = None
+        for range2 in sorted(ranges, key=lambda x : x[0]):
+            if range1 is None:
+                # First range : Store and continue
+                range1 = range2
+                continue
+            elif range1[1] + 1 == range2[0]:
+                # Contiguous 1->2 : Join
+                range1 = (range1[0], range2[1])
+            elif range2[1] + 1 == range1[0]:
+                # Contiguous 2->1 : Join
+                range1 = (range2[0], range1[1])
+            elif range1[1] < range2[0] or range2[1] < range1[0]:
+                # Do not intesect : Add 1, Store 2
+                ranges_reduced.add(range1)
+                range1 = range2
+            else:
+                # Intersect in some way : min-max
+                range1 = (min(range1[0], range2[0]), max(range1[1], range2[1]))
+        # Add last 1
+        ranges_reduced.add(range1)
+        end_count = len(ranges_reduced)
+        if end_count == start_count:
+            # Can't reduce further
+            break
+        # Re-init
+        start_count = end_count
+        ranges = ranges_reduced
     return ranges_reduced
 
 def main(input_filepath: str, search_y: int, max_bound: int):
     with open(input_filepath, 'r') as input_file:
         sensors_beacons_mdists = [ x for x in iter_sensors_beacons_mdists(iter_inputs(iter_line(input_file))) ]
 
-    x_ranges_at_y = get_x_ranges_at_y(sensors_beacons_mdists, search_y)
-
-    while True:
-        start_count = len(x_ranges_at_y)
-        x_ranges_at_y = reduce_ranges(x_ranges_at_y)
-        if len(x_ranges_at_y) == start_count:
-            break
+    x_ranges_at_y = reduce_ranges(get_x_ranges_at_y(sensors_beacons_mdists, search_y))
 
     sensors_beacons_xs_on_y = set()
     for sensor_loc, beacon_loc, _ in sensors_beacons_mdists:
@@ -90,18 +100,12 @@ def main(input_filepath: str, search_y: int, max_bound: int):
     )
 
     for search_y in range(max_bound+1):
-        bounded_x_ranges_at_y = {
+        bounded_x_ranges_at_y = reduce_ranges({
             (max(min_x, 0), min(max_x, max_bound))
             for min_x, max_x
             in get_x_ranges_at_y(sensors_beacons_mdists, search_y)
             if min_x <= max_bound or max_x >= 0
-        }
-
-        while True:
-            start_count = len(bounded_x_ranges_at_y)
-            bounded_x_ranges_at_y = reduce_ranges(bounded_x_ranges_at_y)
-            if len(bounded_x_ranges_at_y) == start_count:
-                break
+        })
 
         if len(bounded_x_ranges_at_y) < 2:
             continue
