@@ -4,7 +4,7 @@ from os import path
 FOLDER = path.dirname(__file__)
 INPUT = path.join(FOLDER, 'input_example.txt')
 
-def line_iter(file_object: TextIOWrapper):
+def iter_line(file_object: TextIOWrapper):
     for line in file_object:
         yield line.strip()
 
